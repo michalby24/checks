@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.2-rc.3](https://github.com/michalby24/checks/compare/v0.0.1-rc.3...v0.0.2-rc.3) (2026-01-11)
+
+
+### Bug Fixes
+
+* C ([#6](https://github.com/michalby24/checks/issues/6)) ([4c9e14f](https://github.com/michalby24/checks/commit/4c9e14fd3263957b8a7d66b629b68776522ab012))
+
 ## 0.0.1-rc.3 (2026-01-11)
 
 
