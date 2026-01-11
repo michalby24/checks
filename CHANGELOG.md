@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.0-rc.1](https://github.com/michalby24/checks/compare/v0.0.1-rc.3...v0.1.0-rc.1) (2026-01-11)
+
+
+### Features
+
+* B ([#4](https://github.com/michalby24/checks/issues/4)) ([66c809c](https://github.com/michalby24/checks/commit/66c809ca7cde55bc0e152c41f14ea5c2aee0766a))
+
+
+### Miscellaneous Chores
+
+* enforce correct rc version ([81b5514](https://github.com/michalby24/checks/commit/81b5514993bd089d32aa742c5efc403d21424258))
+
 ## 0.0.1-rc.3 (2026-01-11)
 
 
