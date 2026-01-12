@@ -74,6 +74,39 @@ runs:
           echo "No stale release PRs found."
         fi
 
+    - name: Sanitize Manifest Version (Main Only)
+      id: sanitize
+      if: ${{ github.ref_name == 'main' }}
+      shell: bash
+      run: |
+        MANIFEST=".release-please-manifest.json"
+        
+        if [ -f "$MANIFEST" ]; then
+          echo "🔧 Checking manifest for Pre-release suffix..."
+          
+          # 1. Get current version (Assuming key is ".")
+          CURRENT_VER=$(jq -r '.["."]' "$MANIFEST")
+          
+          # 2. Check if it contains a hyphen (e.g. 0.1.0-rc.20)
+          if [[ "$CURRENT_VER" == *"-"* ]]; then
+            # 3. Strip everything after the hyphen
+            STABLE_VER="${CURRENT_VER%%-*}"
+            
+            echo "🚨 RC Detected: $CURRENT_VER"
+            echo "✂️  Sanitizing to: $STABLE_VER"
+            
+            # 4. Update the file in-place using jq
+            # We use a temporary file to avoid read/write race conditions
+            jq --arg v "$STABLE_VER" '.["."] = $v' "$MANIFEST" > "$MANIFEST.tmp" && mv "$MANIFEST.tmp" "$MANIFEST"
+            
+            echo "✅ Manifest updated locally."
+          else
+            echo "Version $CURRENT_VER is already stable. No change needed."
+          fi
+        else
+           echo "No manifest file found."
+        fi
+
     - name: Run release-please
       if: env.SKIP_RELEASE != 'true'
       uses: googleapis/release-please-action@v4
