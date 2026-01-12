@@ -21,44 +21,6 @@ runs:
       with:
         python-version: '3.14'
 
-    - name: Promote RC to Stable
-      id: promote
-      if: ${{ github.ref_name == 'main' }}
-      shell: bash
-      env:
-        GH_TOKEN: ${{ inputs.token }}
-      run: |
-        # 1. Check if manifest exists
-        if [ ! -f .release-please-manifest.json ]; then
-          echo "No .release-please-manifest.json found. Skipping promotion."
-          exit 0
-        fi
-
-        # 2. Read the current version (Assumes "." is the package key)
-        CURRENT_VER=$(jq -r '.["."]' .release-please-manifest.json)
-        echo "Current Manifest Version: $CURRENT_VER"
-
-        # 3. Check for hyphen (indicating it's an RC, e.g. 0.0.1-rc.3)
-        if [[ "$CURRENT_VER" == *"-"* ]]; then
-          # Strip the suffix to get stable version (0.0.1)
-          STABLE_VER="${CURRENT_VER%%-*}"
-          
-          echo "🚨 Pre-release detected on main! Promoting to Stable: $STABLE_VER"
-
-          git config user.name "mapcolonies[bot]"
-          git config user.email "devops[bot]@mapcolonies.com"
-
-          # 4. Force the Stable Version using Release-As
-          git commit --allow-empty -m "chore: promote to stable $STABLE_VER" -m "Release-As: $STABLE_VER"
-          
-          # 5. Push and signal to skip the rest of this run
-          git push "https://x-access-token:${{ inputs.token }}@github.com/${{ github.repository }}.git" HEAD:main
-          
-          echo "skip_rest=true" >> $GITHUB_ENV
-        else
-          echo "✅ Version is already stable."
-        fi
-
     - name: Calculate Correct RC Version
       id: calc
       if: ${{ github.ref_name == 'next' }}
@@ -110,6 +72,39 @@ runs:
           gh pr close "$PR_NUMBER" --delete-branch
         else
           echo "No stale release PRs found."
+        fi
+
+    - name: Sanitize Manifest Version (Main Only)
+      id: sanitize
+      if: ${{ github.ref_name == 'main' }}
+      shell: bash
+      run: |
+        MANIFEST=".release-please-manifest.json"
+        
+        if [ -f "$MANIFEST" ]; then
+          echo "🔧 Checking manifest for Pre-release suffix..."
+          
+          # 1. Get current version (Assuming key is ".")
+          CURRENT_VER=$(jq -r '.["."]' "$MANIFEST")
+          
+          # 2. Check if it contains a hyphen (e.g. 0.1.0-rc.20)
+          if [[ "$CURRENT_VER" == *"-"* ]]; then
+            # 3. Strip everything after the hyphen
+            STABLE_VER="${CURRENT_VER%%-*}"
+            
+            echo "🚨 RC Detected: $CURRENT_VER"
+            echo "✂️  Sanitizing to: $STABLE_VER"
+            
+            # 4. Update the file in-place using jq
+            # We use a temporary file to avoid read/write race conditions
+            jq --arg v "$STABLE_VER" '.["."] = $v' "$MANIFEST" > "$MANIFEST.tmp" && mv "$MANIFEST.tmp" "$MANIFEST"
+            
+            echo "✅ Manifest updated locally."
+          else
+            echo "Version $CURRENT_VER is already stable. No change needed."
+          fi
+        else
+           echo "No manifest file found."
         fi
 
     - name: Run release-please
