@@ -119,3 +119,4 @@ runs:
         token: ${{ inputs.token }}
         target-branch: ${{ github.ref_name }}
         config-file: release-please-config.${{ github.ref_name }}.json
+        manifest-file: ${{ github.ref_name == 'next' && '.release-please-manifest.json' || 'non-existent-file.json' }}
